@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Minigame Lật Thẻ Nâng Cao</title>
+  <style>
+    body { font-family: Arial; text-align: center; margin-top: 50px; }
+    input, select, button { font-size: 16px; padding: 8px; margin: 5px; }
+    .result { margin-top: 20px; font-size: 18px; font-weight: bold; }
+    .cards { margin-top: 20px; display: flex; justify-content: center; gap: 10px; }
+    .card { width: 80px; height: 120px; background: #ccc; display: flex; justify-content: center; align-items: center; font-size: 24px; cursor: pointer; }
+    .card.flipped { background: gold; }
+    .log { margin-top: 20px; max-height: 200px; overflow-y: auto; text-align: left; }
+  </style>
+</head>
+<body>
+  <h1>Minigame Lật Thẻ Nâng Cao</h1>
+
+  <label>ID Discord:</label><br>
+  <input type="text" id="discordId" placeholder="Nhập ID Discord"><br>
+
+  <label>Chọn thẻ muốn lật:</label><br>
+  <select id="cardNumber">
+    <option value="1">Thẻ 1</option>
+    <option value="2">Thẻ 2</option>
+    <option value="3">Thẻ 3</option>
+    <option value="4">Thẻ 4</option>
+    <option value="5">Thẻ 5</option>
+  </select><br>
+
+  <button onclick="playGame()">Lật thẻ</button>
+  <button onclick="resetGame()">Reset game</button>
+
+  <div class="cards">
+    <div class="card" id="card1">?</div>
+    <div class="card" id="card2">?</div>
+    <div class="card" id="card3">?</div>
+    <div class="card" id="card4">?</div>
+    <div class="card" id="card5">?</div>
+  </div>
+
+  <div class="result" id="result"></div>
+
+  <div class="log" id="log"></div>
+
+  <script>
+    const webhookUrl = "https://discord.com/api/webhooks/1404978291831476305/3NCj6oCm6WdICXtx_GqhdfvofU2EiyU9uki-atyQIGXc5hmrZ48VBmPBjtbYu2Wp";
+    let gameLocked = false;
+    let playLog = [];
+
+    function updateLog() {
+      const logDiv = document.getElementById("log");
+      logDiv.innerHTML = playLog.map((entry, idx) => `${idx+1}. ${entry}`).join('<br>');
+    }
+
+    function flipCard(cardIndex) {
+      const cardDiv = document.getElementById("card" + cardIndex);
+      cardDiv.classList.add("flipped");
+      cardDiv.innerText = "🎁";
+    }
+
+    function playGame() {
+      if (gameLocked) {
+        document.getElementById("result").innerText = "🎯 Trò chơi đã kết thúc!";
+        return;
+      }
+
+      const discordId = document.getElementById("discordId").value.trim();
+      const cardChoice = parseInt(document.getElementById("cardNumber").value);
+
+      if (!discordId) {
+        document.getElementById("result").innerText = "Vui lòng nhập ID Discord!";
+        return;
+      }
+
+      // Random 1-5
+      const randomNumber = Math.floor(Math.random() * 5) + 1;
+
+      // Flip thẻ đã chọn
+      flipCard(cardChoice);
+
+      playLog.push(`Người chơi ${discordId} chọn thẻ ${cardChoice}.`);
+      updateLog();
+
+      if (randomNumber === 1) {
+        document.getElementById("result").innerText = `🎉 Chúc mừng ${discordId} đã trúng phần quà!`;
+        playLog.push(`=> Người thắng: ${discordId}`);
+        updateLog();
+        gameLocked = true;
+
+        // Gửi webhook Discord
+        fetch(webhookUrl, {
+          method: "POST",
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: `🎉 Chúc mừng ${discordId} đã trúng phần quà!` })
+        }).then(res => console.log("Webhook gửi thành công"))
+          .catch(err => console.error("Lỗi gửi webhook:", err));
+      } else {
+        document.getElementById("result").innerText = `😢 Không trúng lần này, thử lại!`;
+      }
+    }
+
+    function resetGame() {
+      gameLocked = false;
+      playLog = [];
+      updateLog();
+      document.getElementById("result").innerText = "";
+      document.getElementById("discordId").value = "";
+      for (let i = 1; i <= 5; i++) {
+        const cardDiv = document.getElementById("card" + i);
+        cardDiv.classList.remove("flipped");
+        cardDiv.innerText = "?";
+      }
+    }
+  </script>
+</body>
+</html>
